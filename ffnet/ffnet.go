@@ -3,6 +3,7 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+    "github.com/kr/pretty"
 )
 
 var _ = fmt.Printf
@@ -11,6 +12,7 @@ type FFNetConf struct {
 	Layers []int32
 	Alpha float64
 	Eta float64
+	Regularization float64
 	Bias bool
 	Iterations int
 	Activation ActivationFunc
@@ -68,17 +70,18 @@ func BuildFFNet(conf *FFNetConf) *ffNet {
 }
 
 func (self *ffNet) Train(trainSet []TrainExample) {
-	delta_w := make([][][]float64, len(self.w))
-	for l := range(delta_w) {
-		delta_w[l] = make([][]float64, len(self.w[l]))
-		for i := range(delta_w[l]) {
-			delta_w[l][i] = make([]float64, len(self.w[l][i]))
-		}
-	}
 
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
 		fmt.Println("Iteration #", iteration + 1)
+		delta_w := make([]matrix_t, len(self.w))
+		for l := range(delta_w) {
+			delta_w[l] = make([]row_t, len(self.w[l]))
+			for i := range(delta_w[l]) {
+				delta_w[l][i] = make(row_t, len(self.w[l][i]))
+			}
+		}
 
+		m := float64(len(trainSet))
 		for k := range(trainSet) {
 			input := trainSet[k].Input
 			activations := self.forward(input)
@@ -87,38 +90,35 @@ func (self *ffNet) Train(trainSet []TrainExample) {
 			for l := range(delta_w) {
 				for i := range(delta_w[l]) {
 					for j := range(delta_w[l][i]) {
-//						fmt.Println("-----")
-//						fmt.Println(l, i, j)
-//						fmt.Println(len(deltas[l]), len(activations[l]))
-						delta_w[l][i][j] = self.conf.Alpha * delta_w[l][i][j] + (1 - self.conf.Alpha) * self.conf.Eta * deltas[l+1][j] * activations[l][i]
+						delta_w[l][i][j] += deltas[l+1][j] * activations[l][i]
 					}
 				}
 			}
 		}
-
 		for l := range(delta_w) {
 			for i := range(delta_w[l]) {
 				for j := range(delta_w[l][i]) {
-					self.w[l][i][j] += delta_w[l][i][j]
+					self.w[l][i][j] -= self.conf.Alpha * delta_w[l][i][j] / m
 				}
 			}
 		}
+		pretty.Println(self.w)
 	}
 }
 
-func (self *ffNet) Test(input []float64) []float64 {
+func (self *ffNet) Predict(input []float64) []float64 {
 	res := self.forward(input)
 	return res[len(res) - 1]
 }
 
 func (self *ffNet) forward(input []float64) [][]float64 {
-	outputs := make([][]float64, len(self.w) + 1)
-	outputs[0] = input
+	activations := make([][]float64, len(self.w) + 1)
+	activations[0] = input
 	for l := range(self.w) {
-		outputs[l+1] = self.dot(l, input, self.w[l])
-		input = outputs[l+1]
+		activations[l+1] = self.computeActivation(l, input, self.w[l])
+		input = activations[l+1]
 	}
-	return outputs
+	return activations
 }
 
 func (self *ffNet) backward(activations [][]float64, expected []float64) [][]float64 {
@@ -128,29 +128,29 @@ func (self *ffNet) backward(activations [][]float64, expected []float64) [][]flo
 		if (l == L - 1) {
 			deltas[l] = make([]float64, self.conf.Layers[l])
 			for j := range(deltas[l]) {
-				deltas[l][j] = (activations[l][j] - expected[j])
+				deltas[l][j] = (activations[l][j] - expected[j]) * activations[l][j] * (1 - activations[l][j])
 			}
 		} else {
-			deltas[l] = self.dot2(activations[l], self.w[l], deltas[l+1])
+			deltas[l] = self.computeDelta(activations[l], self.w[l], deltas[l+1])
 		}
 	}
 	return deltas
 }
 
 
-func (self *ffNet) dot(layer int, a []float64, b matrix_t) []float64 {
-	b_rows := len(b)
-	b_cols := len(b[0])
+func (self *ffNet) computeActivation(layer int, input []float64, w matrix_t) []float64 {
+	b_rows := len(w)
+	b_cols := len(w[0])
 
-	if len(a) != b_rows {
-		panic(fmt.Sprintf("Incomatible sizes: 1x%d * %dx%d", len(a), b_rows, b_cols))
+	if len(input) != b_rows {
+		panic(fmt.Sprintf("Incomatible sizes: 1x%d * %dx%d", len(input), b_rows, b_cols))
 	}
 	res := make([]float64, b_cols)
 
 	for j := range(res) {
 		s := 1.0 * self.b[layer]
 		for i := 0; i < b_rows; i++ {
-			s += float64(a[i]) * b[i][j]
+			s += float64(input[i]) * w[i][j]
 		}
 		res[j] = float64(self.conf.Activation(s))
 	}
@@ -158,19 +158,19 @@ func (self *ffNet) dot(layer int, a []float64, b matrix_t) []float64 {
 	return res
 }
 
-func (self *ffNet) dot2(layerActivation []float64, w matrix_t, d []float64) []float64 {
+func (self *ffNet) computeDelta(layerActivation []float64, w matrix_t, nextDelta []float64) []float64 {
 	w_rows := len(w)
 	w_cols := len(w[0])
 
-	if w_cols != len(d) {
-		panic(fmt.Sprintf("Incomatible sizes: %dx%d * %dx1", w_rows, w_cols, len(d)))
+	if w_cols != len(nextDelta) {
+		panic(fmt.Sprintf("Incomatible sizes: %dx%d * %dx1", w_rows, w_cols, len(nextDelta)))
 	}
 	res := make([]float64, w_rows)
 
 	for i := range(res) {
 		s := 0.0
 		for j := 0; j < w_cols; j++ {
-			s += w[i][j] * d[j]
+			s += w[i][j] * nextDelta[j]
 		}
 		res[i] = s * layerActivation[i] * (1 - layerActivation[i])
 	}
