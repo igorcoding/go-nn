@@ -3,10 +3,14 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-    "github.com/kr/pretty"
+//    "github.com/kr/pretty"
 )
 
 var _ = fmt.Printf
+
+const (
+	RAND_EPSILON = 0.5
+)
 
 type FFNetConf struct {
 	Layers []int32
@@ -29,6 +33,10 @@ type ffNet struct {
 type TrainExample struct {
 	Input []float64
 	Output []float64
+}
+
+func NewTrainExample(input, output []float64) TrainExample {
+	return TrainExample{Input:input, Output:output}
 }
 
 func BuildFFNet(conf *FFNetConf) *ffNet {
@@ -54,14 +62,14 @@ func BuildFFNet(conf *FFNetConf) *ffNet {
 		for i := range(nn.w[l]) {
 			nn.w[l][i] = make(row_t, conf.Layers[l + 1])
 			for j := range(nn.w[l][i]) {
-				nn.w[l][i][j] = nn.randomSource.Float64()
+				nn.w[l][i][j] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 			}
 		}
 	}
 	nn.b = make(row_t, len(conf.Layers) - 1)
 	for l := range(nn.b) {
 		if conf.Bias {
-			nn.b[l] = nn.randomSource.Float64()
+			nn.b[l] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 		} else {
 			nn.b[l] = 0
 		}
@@ -102,7 +110,7 @@ func (self *ffNet) Train(trainSet []TrainExample) {
 				}
 			}
 		}
-		pretty.Println(self.w)
+//		pretty.Println(delta_w)
 	}
 }
 
