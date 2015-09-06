@@ -52,9 +52,10 @@ func main() {
 
 
 
-	conf := &ffnet.FFNetConf{Layers: []int32{2,2,1},
-	                         Alpha: 0.8,
-	                         Regularization: 0.8,
+	conf := &ffnet.FFNetConf{Layers: []int32{2, 2, 1},
+	                         Alpha: 0.1,
+	                         Momentum: 0.8,
+	                         Regularization: 0.01,
 	                         Bias: true,
 	                         Iterations: 10000}
 	net := ffnet.BuildFFNet(conf)
