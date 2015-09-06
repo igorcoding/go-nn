@@ -14,7 +14,7 @@ const (
 
 type FFNetConf struct {
 	Layers []int32
-	Alpha float64
+	LearningRate float64
 	Momentum float64
 	Regularization float64
 	Bias bool
@@ -196,14 +196,14 @@ func (self *ffNet) createDeltaWeights() ([]matrix_t, matrix_t) {
 	return dw, db
 }
 
-func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float64, delta_w []matrix_t, delta_b matrix_t) {
-	for l := range(delta_w) {
-		for j := range(delta_b[l]) {
-			delta_b[l][j] += deltas[l+1][j] * 1.0
+func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float64, dw []matrix_t, db matrix_t) {
+	for l := range(dw) {
+		for j := range(db[l]) {
+			db[l][j] += deltas[l+1][j] * 1.0
 		}
-		for i := range(delta_w[l]) {
-			for j := range(delta_w[l][i]) {
-				delta_w[l][i][j] += deltas[l+1][j] * activations[l][i]
+		for i := range(dw[l]) {
+			for j := range(dw[l][i]) {
+				dw[l][i][j] += deltas[l+1][j] * activations[l][i]
 			}
 		}
 	}
@@ -214,13 +214,13 @@ func (self *ffNet) applyDeltaWeights(trainSetSize int, dw []matrix_t, db matrix_
 	for l := range(dw) {
 		for j := range(dw[l][0]) {  // swapped loops for bias calculation optimization
 			if self.conf.Bias {
-				delta_b_lj := - self.conf.Alpha * db[l][j] / m + self.conf.Momentum * prev_delta_b[l][j]
+				delta_b_lj := - self.conf.LearningRate * db[l][j] / m + self.conf.Momentum * prev_delta_b[l][j]
 				self.b[l][j] += delta_b_lj
 				prev_delta_b[l][j] = delta_b_lj
 			}
 			for i := range(dw[l]) {
 				reg := self.conf.Regularization * self.w[l][i][j]
-				delta_w_lij := - self.conf.Alpha * (dw[l][i][j] / m + reg) + self.conf.Momentum * prev_delta_w[l][i][j]
+				delta_w_lij := - self.conf.LearningRate * (dw[l][i][j] / m + reg) + self.conf.Momentum * prev_delta_w[l][i][j]
 				self.w[l][i][j] += delta_w_lij
 				prev_delta_w[l][i][j] = delta_w_lij
 			}
