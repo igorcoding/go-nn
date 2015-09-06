@@ -81,46 +81,15 @@ func (self *ffNet) Train(trainSet []TrainExample) {
 
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
 		fmt.Println("Iteration #", iteration + 1)
-		delta_w := make([]matrix_t, len(self.w))
-		for l := range(delta_w) {
-			delta_w[l] = make([]row_t, len(self.w[l]))
-			for i := range(delta_w[l]) {
-				delta_w[l][i] = make(row_t, len(self.w[l][i]))
-			}
-		}
-		delta_b := make(matrix_t, len(self.b))
-		for l := range(delta_b) {
-			delta_b[l] = make(row_t, len(self.b[l]))
-		}
+		delta_w, delta_b := self.createDeltaWeights()
 
-		m := float64(len(trainSet))
 		for k := range(trainSet) {
 			input := trainSet[k].Input
 			activations := self.forward(input)
 			deltas := self.backward(activations, trainSet[k].Output)
-
-			for l := range(delta_w) {
-				for j := range(delta_b[l]) {
-					delta_b[l][j] += deltas[l+1][j] * 1.0
-				}
-				for i := range(delta_w[l]) {
-					for j := range(delta_w[l][i]) {
-						delta_w[l][i][j] += deltas[l+1][j] * activations[l][i]
-					}
-				}
-			}
+			self.computeDeltaWeights(activations, deltas, delta_w, delta_b)
 		}
-		for l := range(delta_w) {
-			for j := range(delta_w[l][0]) {  // swapped loops for bias calculation optimization
-				if self.conf.Bias {
-					self.b[l][j] -= self.conf.Alpha * delta_b[l][j] / m
-				}
-				for i := range(delta_w[l]) {
-					self.w[l][i][j] -= self.conf.Alpha * delta_w[l][i][j] / m
-				}
-			}
-		}
-
+		self.applyDeltaWeights(len(trainSet), delta_w, delta_b)
 	}
 	pretty.Println(self.w)
 	pretty.Println(self.b)
@@ -196,4 +165,47 @@ func (self *ffNet) computeDelta(layerActivation []float64, w matrix_t, bias row_
 	}
 
 	return delta
+}
+
+func (self *ffNet) createDeltaWeights() ([]matrix_t, matrix_t) {
+	delta_w := make([]matrix_t, len(self.w))
+	for l := range(delta_w) {
+		delta_w[l] = make([]row_t, len(self.w[l]))
+		for i := range(delta_w[l]) {
+			delta_w[l][i] = make(row_t, len(self.w[l][i]))
+		}
+	}
+	delta_b := make(matrix_t, len(self.b))
+	for l := range(delta_b) {
+		delta_b[l] = make(row_t, len(self.b[l]))
+	}
+
+	return delta_w, delta_b
+}
+
+func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float64, delta_w []matrix_t, delta_b matrix_t) {
+	for l := range(delta_w) {
+		for j := range(delta_b[l]) {
+			delta_b[l][j] += deltas[l+1][j] * 1.0
+		}
+		for i := range(delta_w[l]) {
+			for j := range(delta_w[l][i]) {
+				delta_w[l][i][j] += deltas[l+1][j] * activations[l][i]
+			}
+		}
+	}
+}
+
+func (self *ffNet) applyDeltaWeights(trainSetSize int, delta_w []matrix_t, delta_b matrix_t) {
+	m := float64(trainSetSize)
+	for l := range(delta_w) {
+		for j := range(delta_w[l][0]) {  // swapped loops for bias calculation optimization
+			if self.conf.Bias {
+				self.b[l][j] -= self.conf.Alpha * delta_b[l][j] / m
+			}
+			for i := range(delta_w[l]) {
+				self.w[l][i][j] -= self.conf.Alpha * delta_w[l][i][j] / m
+			}
+		}
+	}
 }
