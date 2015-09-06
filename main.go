@@ -52,18 +52,15 @@ func main() {
 
 
 
-	conf := &ffnet.FFNetConf{Layers: []int32{2,3,1},
+	conf := &ffnet.FFNetConf{Layers: []int32{2,2,1},
 	                         Alpha: 0.8,
-							 Eta: 0.1,
-							 Regularization: 0.8,
-							 Bias: false,
-							 Iterations: 10000}
+	                         Regularization: 0.8,
+	                         Bias: true,
+	                         Iterations: 10000}
 	net := ffnet.BuildFFNet(conf)
 	net.Train(trainSet)
 
 	for t := range(trainSet) {
 		fmt.Println(trainSet[t].Input, "=>", net.Predict(trainSet[t].Input))
 	}
-
-	fmt.Println(net)
 }
