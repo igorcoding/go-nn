@@ -1,4 +1,4 @@
-package ffnet
+package util
 import "fmt"
 
 type matrix struct {

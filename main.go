@@ -2,6 +2,7 @@ package main
 import (
 	"fmt"
 	"github.com/igorcoding/nn/ffnet"
+	"github.com/igorcoding/nn/util"
 )
 
 
@@ -11,11 +12,11 @@ func main() {
 }
 
 func xor() {
-	trainSet := []ffnet.TrainExample{
-		ffnet.TrainExample{Input:[]float64{0, 0}, Output:[]float64{0}},
-		ffnet.TrainExample{Input:[]float64{0, 1}, Output:[]float64{1}},
-		ffnet.TrainExample{Input:[]float64{1, 0}, Output:[]float64{1}},
-		ffnet.TrainExample{Input:[]float64{1, 1}, Output:[]float64{0}},
+	trainSet := []util.TrainExample{
+		util.TrainExample{Input:[]float64{0, 0}, Output:[]float64{0}},
+		util.TrainExample{Input:[]float64{0, 1}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{1, 0}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{1, 1}, Output:[]float64{0}},
 	}
 
 
@@ -23,7 +24,7 @@ func xor() {
 		LearningRate: 0.7,
 		Momentum: 0.8,
 		Regularization: 0.0001,
-		Bias: false,
+		Bias: true,
 		Iterations: 10000}
 	net := ffnet.BuildFFNet(conf)
 	net.Train(trainSet)
@@ -34,37 +35,37 @@ func xor() {
 }
 
 func lecture() {
-	trainSet := []ffnet.TrainExample{
-		ffnet.NewTrainExample([]float64{
+	trainSet := []util.TrainExample{
+		util.NewTrainExample([]float64{
 			1, 0, 0,
 			0, 1, 0,
 			0, 0, 1}, []float64{1}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			0, 0, 1,
 			0, 1, 0,
 			1, 0, 0}, []float64{1}),
 
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			1, 1, 0,
 			0, 1, 0,
 			0, 0, 1}, []float64{0}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			0, 0, 1,
 			0, 1, 0,
 			0, 0, 1}, []float64{0}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			0, 1, 0,
 			0, 1, 0,
 			0, 1, 0}, []float64{0}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			1, 1, 1,
 			1, 1, 1,
 			1, 1, 1}, []float64{0}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			1, 1, 0,
 			0, 1, 0,
 			0, 1, 1}, []float64{0}),
-		ffnet.NewTrainExample([]float64{
+		util.NewTrainExample([]float64{
 			1, 0, 1,
 			0, 1, 0,
 			1, 0, 1}, []float64{0}),

@@ -3,13 +3,16 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-	"github.com/kr/pretty"
+	"github.com/igorcoding/nn/util"
+//	"github.com/kr/pretty"
 )
+
+import "C"
 
 var _ = fmt.Printf
 
 const (
-	RAND_EPSILON = 0.5
+	RAND_EPSILON = 0.6
 )
 
 type FFNetConf struct {
@@ -24,19 +27,10 @@ type FFNetConf struct {
 
 type ffNet struct {
 	conf *FFNetConf
-	w []matrix_t
-	b matrix_t
+	w []util.Matrix_t
+	b util.Matrix_t
 
 	randomSource *rand.Rand
-}
-
-type TrainExample struct {
-	Input []float64
-	Output []float64
-}
-
-func NewTrainExample(input, output []float64) TrainExample {
-	return TrainExample{Input:input, Output:output}
 }
 
 func BuildFFNet(conf *FFNetConf) *ffNet {
@@ -56,21 +50,21 @@ func BuildFFNet(conf *FFNetConf) *ffNet {
 	nn := &ffNet{conf:conf}
 	nn.randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	nn.w = make([]matrix_t, len(conf.Layers) - 1);
+	nn.w = make([]util.Matrix_t, len(conf.Layers) - 1);
 	for l := range(nn.w) {
-		nn.w[l] = make(matrix_t, conf.Layers[l])
+		nn.w[l] = make(util.Matrix_t, conf.Layers[l])
 		for i := range(nn.w[l]) {
-			nn.w[l][i] = make(row_t, conf.Layers[l + 1])
+			nn.w[l][i] = make(util.Row_t, conf.Layers[l + 1])
 			for j := range(nn.w[l][i]) {
 				nn.w[l][i][j] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 			}
 		}
 	}
-	nn.b = make(matrix_t, len(conf.Layers) - 1)
+	nn.b = make(util.Matrix_t, len(conf.Layers) - 1)
 	for l := range(nn.b) {
-		nn.b[l] = make(row_t, conf.Layers[l+1])
+		nn.b[l] = make(util.Row_t, conf.Layers[l+1])
 		if conf.Bias {
-			for j := range(nn.b[l]) {
+			for j := range (nn.b[l]) {
 				nn.b[l][j] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 			}
 		}
@@ -78,18 +72,18 @@ func BuildFFNet(conf *FFNetConf) *ffNet {
 	return nn
 }
 
-func (self *ffNet) Train(trainSet []TrainExample) {
+func (self *ffNet) Train(trainSet []util.TrainExample) {
 
-	prev_delta_w := make([]matrix_t, len(self.w))
+	prev_delta_w := make([]util.Matrix_t, len(self.w))
 	for l := range(prev_delta_w) {
-		prev_delta_w[l] = make([]row_t, len(self.w[l]))
+		prev_delta_w[l] = make([]util.Row_t, len(self.w[l]))
 		for i := range(prev_delta_w[l]) {
-			prev_delta_w[l][i] = make(row_t, len(self.w[l][i]))
+			prev_delta_w[l][i] = make(util.Row_t, len(self.w[l][i]))
 		}
 	}
-	prev_delta_b := make(matrix_t, len(self.b))
+	prev_delta_b := make(util.Matrix_t, len(self.b))
 	for l := range(prev_delta_b) {
-		prev_delta_b[l] = make(row_t, len(self.b[l]))
+		prev_delta_b[l] = make(util.Row_t, len(self.b[l]))
 	}
 
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
@@ -104,8 +98,8 @@ func (self *ffNet) Train(trainSet []TrainExample) {
 		}
 		self.applyDeltaWeights(len(trainSet), dw, db, prev_delta_w, prev_delta_b)
 	}
-	pretty.Println(self.w)
-	pretty.Println(self.b)
+//	pretty.Println(self.w)
+//	pretty.Println(self.b)
 }
 
 func (self *ffNet) Predict(input []float64) []float64 {
@@ -140,7 +134,7 @@ func (self *ffNet) backward(activations [][]float64, expected []float64) [][]flo
 }
 
 
-func (self *ffNet) computeActivation(bias row_t, input []float64, w matrix_t) []float64 {
+func (self *ffNet) computeActivation(bias util.Row_t, input []float64, w util.Matrix_t) []float64 {
 	w_rows := len(w)
 	w_cols := len(w[0])
 
@@ -160,7 +154,7 @@ func (self *ffNet) computeActivation(bias row_t, input []float64, w matrix_t) []
 	return res
 }
 
-func (self *ffNet) computeDelta(layerActivation []float64, w matrix_t, bias row_t, nextDelta []float64) []float64 {
+func (self *ffNet) computeDelta(layerActivation []float64, w util.Matrix_t, bias util.Row_t, nextDelta []float64) []float64 {
 	w_rows := len(w)
 	w_cols := len(w[0])
 
@@ -180,23 +174,23 @@ func (self *ffNet) computeDelta(layerActivation []float64, w matrix_t, bias row_
 	return delta
 }
 
-func (self *ffNet) createDeltaWeights() ([]matrix_t, matrix_t) {
-	dw := make([]matrix_t, len(self.w))
+func (self *ffNet) createDeltaWeights() ([]util.Matrix_t, util.Matrix_t) {
+	dw := make([]util.Matrix_t, len(self.w))
 	for l := range(dw) {
-		dw[l] = make([]row_t, len(self.w[l]))
+		dw[l] = make([]util.Row_t, len(self.w[l]))
 		for i := range(dw[l]) {
-			dw[l][i] = make(row_t, len(self.w[l][i]))
+			dw[l][i] = make(util.Row_t, len(self.w[l][i]))
 		}
 	}
-	db := make(matrix_t, len(self.b))
+	db := make(util.Matrix_t, len(self.b))
 	for l := range(db) {
-		db[l] = make(row_t, len(self.b[l]))
+		db[l] = make(util.Row_t, len(self.b[l]))
 	}
 
 	return dw, db
 }
 
-func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float64, dw []matrix_t, db matrix_t) {
+func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float64, dw []util.Matrix_t, db util.Matrix_t) {
 	for l := range(dw) {
 		for j := range(db[l]) {
 			db[l][j] += deltas[l+1][j] * 1.0
@@ -209,7 +203,7 @@ func (self *ffNet) computeDeltaWeights(activations [][]float64, deltas [][]float
 	}
 }
 
-func (self *ffNet) applyDeltaWeights(trainSetSize int, dw []matrix_t, db matrix_t, prev_delta_w []matrix_t, prev_delta_b matrix_t) {
+func (self *ffNet) applyDeltaWeights(trainSetSize int, dw []util.Matrix_t, db util.Matrix_t, prev_delta_w []util.Matrix_t, prev_delta_b util.Matrix_t) {
 	m := float64(trainSetSize)
 	for l := range(dw) {
 		for j := range(dw[l][0]) {  // swapped loops for bias calculation optimization
