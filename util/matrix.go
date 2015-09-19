@@ -21,7 +21,7 @@ type MatrixOP interface {
 }
 
 
-func NewMatrix(rows, cols int) *matrix {
+func _NewMatrix(rows, cols int) *matrix {
 	mat := &matrix{rows: rows, cols: cols}
 	mat.m = make([][]float64, rows)
 	for i := range(mat.m) {
@@ -159,7 +159,7 @@ func Multiply(m1, m2 *matrix) *matrix {
 		panic(fmt.Sprintf("Matricies have wrong sizes. Got: %dx%d and %dx%d", m1.rows, m1.cols, m2.rows, m2.cols))
 	}
 
-	mat := NewMatrix(m1.rows, m2.cols)
+	mat := _NewMatrix(m1.rows, m2.cols)
 	for i1 := range(m1.m) {
 		for j2 := range(m2.m) {
 			for j1 := range(m1.m[i1]) {

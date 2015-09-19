@@ -1,8 +1,8 @@
 package main
 import (
 	"fmt"
-	"github.com/igorcoding/nn/ffnet"
-	"github.com/igorcoding/nn/util"
+	"github.com/igorcoding/go-nn/util"
+	"github.com/igorcoding/go-nn/ffnet"
 )
 
 
@@ -20,7 +20,7 @@ func xor() {
 	}
 
 
-	conf := &ffnet.FFNetConf{Layers: []int32{2, 3, 1},
+	conf := &ffnet.FFNetConf{Layers: []int{2, 3, 1},
 		LearningRate: 0.7,
 		Momentum: 0.8,
 		Regularization: 0.0001,
@@ -71,7 +71,7 @@ func lecture() {
 			1, 0, 1}, []float64{0}),
 	}
 
-	conf := &ffnet.FFNetConf{Layers: []int32{9, 3, 1},
+	conf := &ffnet.FFNetConf{Layers: []int{9, 3, 1},
 		LearningRate: 0.2,
 		Momentum: 0.8,
 		Regularization: 0.0001,

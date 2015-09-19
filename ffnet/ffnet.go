@@ -3,8 +3,7 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-	"github.com/igorcoding/nn/util"
-//	"github.com/kr/pretty"
+	"github.com/igorcoding/go-nn/util"
 )
 
 import "C"
@@ -16,7 +15,7 @@ const (
 )
 
 type FFNetConf struct {
-	Layers []int32
+	Layers []int
 	LearningRate float64
 	Momentum float64
 	Regularization float64
@@ -52,9 +51,8 @@ func BuildFFNet(conf *FFNetConf) *ffNet {
 
 	nn.w = make([]util.Matrix_t, len(conf.Layers) - 1);
 	for l := range(nn.w) {
-		nn.w[l] = make(util.Matrix_t, conf.Layers[l])
+		nn.w[l] = util.NewMatrix(conf.Layers[l], conf.Layers[l + 1])
 		for i := range(nn.w[l]) {
-			nn.w[l][i] = make(util.Row_t, conf.Layers[l + 1])
 			for j := range(nn.w[l][i]) {
 				nn.w[l][i][j] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 			}
@@ -76,10 +74,7 @@ func (self *ffNet) Train(trainSet []util.TrainExample) {
 
 	prev_delta_w := make([]util.Matrix_t, len(self.w))
 	for l := range(prev_delta_w) {
-		prev_delta_w[l] = make([]util.Row_t, len(self.w[l]))
-		for i := range(prev_delta_w[l]) {
-			prev_delta_w[l][i] = make(util.Row_t, len(self.w[l][i]))
-		}
+		prev_delta_w[l] = util.NewMatrix(len(self.w[l]), len(self.w[l][0]))
 	}
 	prev_delta_b := make(util.Matrix_t, len(self.b))
 	for l := range(prev_delta_b) {
@@ -92,8 +87,10 @@ func (self *ffNet) Train(trainSet []util.TrainExample) {
 
 		for k := range(trainSet) {
 			input := trainSet[k].Input
+			output := trainSet[k].Output
+
 			activations := self.forward(input)
-			deltas := self.backward(activations, trainSet[k].Output)
+			deltas := self.backward(activations, output)
 			self.computeDeltaWeights(activations, deltas, dw, db)
 		}
 		self.applyDeltaWeights(len(trainSet), dw, db, prev_delta_w, prev_delta_b)
@@ -177,10 +174,7 @@ func (self *ffNet) computeDelta(layerActivation []float64, w util.Matrix_t, bias
 func (self *ffNet) createDeltaWeights() ([]util.Matrix_t, util.Matrix_t) {
 	dw := make([]util.Matrix_t, len(self.w))
 	for l := range(dw) {
-		dw[l] = make([]util.Row_t, len(self.w[l]))
-		for i := range(dw[l]) {
-			dw[l][i] = make(util.Row_t, len(self.w[l][i]))
-		}
+		dw[l] = util.NewMatrix(len(self.w[l]), len(self.w[l][0]))
 	}
 	db := make(util.Matrix_t, len(self.b))
 	for l := range(db) {
