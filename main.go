@@ -3,12 +3,37 @@ import (
 	"fmt"
 	"github.com/igorcoding/go-nn/util"
 	"github.com/igorcoding/go-nn/ffnet"
+	"github.com/igorcoding/go-nn/perceptron"
 )
 
 
 func main() {
-	xor()
+	perceptron_test()
+//	xor()
 //	lecture()
+}
+
+func perceptron_test() {
+	trainSet := []util.TrainExample{
+		util.TrainExample{Input:[]float64{0, 0}, Output:[]float64{0}},
+		util.TrainExample{Input:[]float64{0, 1}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{1, 0}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{1, 1}, Output:[]float64{1}},
+	}
+
+
+	conf := &perceptron.PerceptronConf{
+		Inputs: 2,
+		LearningRate: 1,
+		Iterations: 1000,
+		Threshold: 20,
+	}
+	net := perceptron.BuildPerceptronNet(conf)
+	net.Train(trainSet)
+
+	for t := range(trainSet) {
+		fmt.Println(trainSet[t].Input, "=>", net.Predict(trainSet[t].Input))
+	}
 }
 
 func xor() {
