@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 	"github.com/igorcoding/go-nn/util"
+	"errors"
 )
 
 import "C"
@@ -21,14 +22,14 @@ type PerceptronConf struct {
 	Threshold float64
 }
 
-type perceptronNet struct {
+type PerceptronNet struct {
 	conf *PerceptronConf
 	w []float64
 
 	randomSource *rand.Rand
 }
 
-func BuildPerceptronNet(conf *PerceptronConf) *perceptronNet {
+func BuildPerceptronNet(conf *PerceptronConf) *PerceptronNet {
 	if conf == nil {
 		panic("Need config to build FFNet")
 	}
@@ -40,7 +41,7 @@ func BuildPerceptronNet(conf *PerceptronConf) *perceptronNet {
 		conf.Iterations = 100
 	}
 
-	nn := &perceptronNet{conf:conf}
+	nn := &PerceptronNet{conf:conf}
 	nn.randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	nn.w = make([]float64, conf.Inputs);
@@ -50,7 +51,7 @@ func BuildPerceptronNet(conf *PerceptronConf) *perceptronNet {
 	return nn
 }
 
-func (self *perceptronNet) Train(trainSet []util.TrainExample) {
+func (self *PerceptronNet) Train(trainSet []util.TrainExample) error {
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
 //		fmt.Println("Iteration #", iteration + 1)
 
@@ -59,7 +60,10 @@ func (self *perceptronNet) Train(trainSet []util.TrainExample) {
 			output := trainSet[k].Output
 			y := output[0]
 
-			h := self.forward(input)
+			h, err := self.forward(input)
+			if err != nil {
+				return errors.New(fmt.Sprintf("traiSet[%d] input size problem", k))
+			}
 			delta := self.conf.LearningRate * (y - h)
 
 
@@ -68,25 +72,27 @@ func (self *perceptronNet) Train(trainSet []util.TrainExample) {
 			}
 		}
 	}
+	return nil
 }
 
-func (self *perceptronNet) Predict(input []float64) []float64 {
-	return []float64{self.forward(input)}
+func (self *PerceptronNet) Predict(input []float64) ([]float64, error) {
+	value, err := self.forward(input)
+	return []float64{value}, err
 }
 
-func (self *perceptronNet) forward(input []float64) float64 {
+func (self *PerceptronNet) forward(input []float64) (float64, error) {
 	if (len(input) != len(self.w)) {
-		panic("Sizes don't match")
+		return 0.0, errors.New("Sizes don't match")
 	}
 	s := 0.0
 	for i := range(self.w) {
 		s += input[i] * self.w[i]
 	}
 
-	return self.threshold(s)
+	return self.threshold(s), nil
 }
 
-func (self *perceptronNet) threshold(value float64) float64 {
+func (self *PerceptronNet) threshold(value float64) float64 {
 	if value <= self.conf.Threshold {
 		return 0
 	} else {
