@@ -24,7 +24,7 @@ type PerceptronConf struct {
 
 type PerceptronNet struct {
 	conf *PerceptronConf
-	w []float64
+	W []float64
 
 	randomSource *rand.Rand
 }
@@ -44,7 +44,7 @@ func BuildPerceptronNet(conf *PerceptronConf) *PerceptronNet {
 	nn := &PerceptronNet{conf:conf}
 	nn.randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	nn.w = make([]float64, conf.Inputs);
+	nn.W = make([]float64, conf.Inputs);
 //	for i := range(nn.w) {
 //		nn.w[i] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
 //	}
@@ -67,8 +67,8 @@ func (self *PerceptronNet) Train(trainSet []util.TrainExample) error {
 			delta := self.conf.LearningRate * (y - h)
 
 
-			for i := range(self.w) {
-				self.w[i] += delta * input[i]
+			for i := range(self.W) {
+				self.W[i] += delta * input[i]
 			}
 		}
 	}
@@ -81,12 +81,12 @@ func (self *PerceptronNet) Predict(input []float64) ([]float64, error) {
 }
 
 func (self *PerceptronNet) forward(input []float64) (float64, error) {
-	if (len(input) != len(self.w)) {
+	if (len(input) != len(self.W)) {
 		return 0.0, errors.New("Sizes don't match")
 	}
 	s := 0.0
-	for i := range(self.w) {
-		s += input[i] * self.w[i]
+	for i := range(self.W) {
+		s += input[i] * self.W[i]
 	}
 
 	return self.threshold(s), nil

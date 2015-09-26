@@ -15,15 +15,30 @@ func main() {
 
 func perceptron_test() {
 	trainSet := []util.TrainExample{
-		util.TrainExample{Input:[]float64{0, 0}, Output:[]float64{0}},
-		util.TrainExample{Input:[]float64{0, 1}, Output:[]float64{1}},
-		util.TrainExample{Input:[]float64{1, 0}, Output:[]float64{1}},
-		util.TrainExample{Input:[]float64{1, 1}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{1, 1, 1,
+			                              0, 0, 0,
+		                                  0, 0, 0}, Output:[]float64{0}},
+		util.TrainExample{Input:[]float64{0, 0, 0,
+										  1, 1, 1,
+										  0, 0, 0}, Output:[]float64{0}},
+		util.TrainExample{Input:[]float64{0, 0, 0,
+			                              0, 0, 0,
+			                              1, 1, 1}, Output:[]float64{0}},
+
+		util.TrainExample{Input:[]float64{1, 0, 0,
+			                              1, 0, 0,
+			                              1, 0, 0}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{0, 1, 0,
+			                              0, 1, 0,
+			                              0, 1, 0}, Output:[]float64{1}},
+		util.TrainExample{Input:[]float64{0, 0, 1,
+			                              0, 0, 1,
+			                              0, 0, 1}, Output:[]float64{1}},
 	}
 
 
 	conf := &perceptron.PerceptronConf{
-		Inputs: 2,
+		Inputs: 9,
 		LearningRate: 1,
 		Iterations: 1000,
 		Threshold: 20,
@@ -32,7 +47,8 @@ func perceptron_test() {
 	net.Train(trainSet)
 
 	for t := range(trainSet) {
-		fmt.Println(trainSet[t].Input, "=>", net.Predict(trainSet[t].Input))
+		prediction, _ := net.Predict(trainSet[t].Input)
+		fmt.Println(trainSet[t].Input, "=>", prediction)
 	}
 }
 
