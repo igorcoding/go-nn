@@ -51,7 +51,15 @@ func BuildPerceptronNet(conf *PerceptronConf) *PerceptronNet {
 	return nn
 }
 
-func (self *PerceptronNet) Train(trainSet []util.TrainExample) error {
+type iteration_t map[string]interface{}
+
+func (self *PerceptronNet) Train(trainSet []util.TrainExample) ([][]float64, error) {
+
+	weights := make([][]float64, len(self.W))
+	for i := range(weights) {
+		weights[i] = make([]float64, self.conf.Iterations)
+	}
+
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
 //		fmt.Println("Iteration #", iteration + 1)
 
@@ -62,7 +70,7 @@ func (self *PerceptronNet) Train(trainSet []util.TrainExample) error {
 
 			h, err := self.forward(input)
 			if err != nil {
-				return errors.New(fmt.Sprintf("traiSet[%d] input size problem", k))
+				return nil, errors.New(fmt.Sprintf("traiSet[%d] input size problem", k))
 			}
 			delta := self.conf.LearningRate * (y - h)
 
@@ -71,8 +79,12 @@ func (self *PerceptronNet) Train(trainSet []util.TrainExample) error {
 				self.W[i] += delta * input[i]
 			}
 		}
+
+		for i := range(self.W) {
+			weights[i][iteration] = self.W[i]
+		}
 	}
-	return nil
+	return weights, nil
 }
 
 func (self *PerceptronNet) Predict(input []float64) ([]float64, error) {

@@ -44,7 +44,8 @@ func perceptron_test() {
 		Threshold: 20,
 	}
 	net := perceptron.BuildPerceptronNet(conf)
-	net.Train(trainSet)
+	weights, _ := net.Train(trainSet)
+	fmt.Println(weights)
 
 	for t := range(trainSet) {
 		prediction, _ := net.Predict(trainSet[t].Input)
