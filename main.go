@@ -21,9 +21,9 @@ func perceptron_test() {
 		util.TrainExample{Input:[]float64{0, 0, 0,
 										  1, 1, 1,
 										  0, 0, 0}, Output:[]float64{0}},
-		util.TrainExample{Input:[]float64{0, 0, 0,
-			                              0, 0, 0,
-			                              1, 1, 1}, Output:[]float64{0}},
+//		util.TrainExample{Input:[]float64{0, 0, 0,
+//			                              0, 0, 0,
+//			                              1, 1, 1}, Output:[]float64{0}},
 
 		util.TrainExample{Input:[]float64{1, 0, 0,
 			                              1, 0, 0,
@@ -44,8 +44,9 @@ func perceptron_test() {
 		Threshold: 20,
 	}
 	net := perceptron.BuildPerceptronNet(conf)
-	weights, _ := net.Train(trainSet)
+	weights, errors, _ := net.Train(trainSet)
 	fmt.Println(weights)
+	fmt.Println(errors)
 
 	for t := range(trainSet) {
 		prediction, _ := net.Predict(trainSet[t].Input)

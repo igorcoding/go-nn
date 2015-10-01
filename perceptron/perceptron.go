@@ -45,23 +45,27 @@ func BuildPerceptronNet(conf *PerceptronConf) *PerceptronNet {
 	nn.randomSource = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	nn.W = make([]float64, conf.Inputs);
-//	for i := range(nn.w) {
-//		nn.w[i] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
-//	}
+	for i := range(nn.W) {
+		nn.W[i] = nn.randomSource.Float64() * (2 * RAND_EPSILON) - RAND_EPSILON
+	}
 	return nn
 }
 
 type iteration_t map[string]interface{}
 
-func (self *PerceptronNet) Train(trainSet []util.TrainExample) ([][]float64, error) {
+func (self *PerceptronNet) Train(trainSet []util.TrainExample) ([][]float64, []float64, error) {
 
 	weights := make([][]float64, len(self.W))
 	for i := range(weights) {
 		weights[i] = make([]float64, self.conf.Iterations)
 	}
 
+	trainErrors := make([]float64, self.conf.Iterations)
+
 	for iteration := 0; iteration < self.conf.Iterations; iteration++ {
 //		fmt.Println("Iteration #", iteration + 1)
+
+		trainErrors[iteration] = 0
 
 		for k := range(trainSet) {
 			input := trainSet[k].Input
@@ -70,9 +74,11 @@ func (self *PerceptronNet) Train(trainSet []util.TrainExample) ([][]float64, err
 
 			h, err := self.forward(input)
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("traiSet[%d] input size problem", k))
+				return nil, nil, errors.New(fmt.Sprintf("traiSet[%d] input size problem", k))
 			}
-			delta := self.conf.LearningRate * (y - h)
+			d := y - h
+			delta := self.conf.LearningRate * d
+			trainErrors[iteration] += d * d
 
 
 			for i := range(self.W) {
@@ -80,11 +86,13 @@ func (self *PerceptronNet) Train(trainSet []util.TrainExample) ([][]float64, err
 			}
 		}
 
+		trainErrors[iteration] /= 2 * float64(len(trainSet))
+
 		for i := range(self.W) {
 			weights[i][iteration] = self.W[i]
 		}
 	}
-	return weights, nil
+	return weights, trainErrors, nil
 }
 
 func (self *PerceptronNet) Predict(input []float64) ([]float64, error) {
